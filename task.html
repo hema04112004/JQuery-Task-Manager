@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Advanced jQuery Task Manager</title>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <style>
+    :root {
+      --bg: #f0f0f0;
+      --text: #111;
+      --card: #fff;
+      --accent: #2c3e50;
+    }
+
+    body.dark {
+      --bg: #1e1e1e;
+      --text: #eee;
+      --card: #333;
+      --accent: #3498db;
+    }
+
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      padding: 40px;
+      text-align: center;
+      transition: 0.4s;
+    }
+
+    h1 {
+      font-size: 36px;
+      margin-bottom: 10px;
+    }
+
+    #themeToggle {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      padding: 8px 15px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    #taskInput {
+      padding: 10px;
+      font-size: 16px;
+      width: 60%;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+
+    #addTaskBtn {
+      padding: 10px 20px;
+      font-size: 16px;
+      background-color: #27ae60;
+      border: none;
+      border-radius: 5px;
+      color: white;
+      margin-left: 10px;
+      cursor: pointer;
+    }
+
+    #filters button {
+      margin: 10px 5px;
+      padding: 6px 12px;
+      border: none;
+      background: var(--accent);
+      color: white;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    ul#taskList {
+      margin-top: 20px;
+      list-style: none;
+      padding: 0;
+    }
+
+    .taskItem {
+      background: var(--card);
+      padding: 12px 20px;
+      margin: 10px auto;
+      width: 60%;
+      border-radius: 8px;
+      text-align: left;
+      position: relative;
+      box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+    }
+
+    .taskItem.done {
+      text-decoration: line-through;
+      background-color: #2ecc71;
+      color: #fff;
+    }
+
+    .taskDate {
+      display: block;
+      font-size: 12px;
+      margin-top: 4px;
+      color: #888;
+    }
+
+    .deleteBtn {
+      position: absolute;
+      right: 20px;
+      top: 12px;
+      background: #e74c3c;
+      color: white;
+      border: none;
+      padding: 5px 10px;
+      cursor: pointer;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+
+    .deleteBtn:hover {
+      background: #c0392b;
+    }
+  </style>
+</head>
+<body>
+
+  <button id="themeToggle">Toggle Theme</button>
+
+  <h1>📋 jQuery Task Manager</h1>
+
+  <input type="text" id="taskInput" placeholder="Enter a new task..." />
+  <button id="addTaskBtn">Add Task</button>
+
+  <div id="filters">
+    <button data-filter="all">All</button>
+    <button data-filter="pending">Pending</button>
+    <button data-filter="completed">Completed</button>
+  </div>
+
+  <ul id="taskList"></ul>
+
+  <script>
+    let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+
+    function saveTasks() {
+      localStorage.setItem("tasks", JSON.stringify(tasks));
+    }
+
+    function formatDate(date) {
+      return new Date(date).toLocaleString();
+    }
+
+    function renderTasks(filter = "all") {
+      $('#taskList').empty();
+      tasks.forEach((task, index) => {
+        if (
+          (filter === "completed" && !task.completed) ||
+          (filter === "pending" && task.completed)
+        ) return;
+
+        const li = $('<li class="taskItem"></li>').toggleClass("done", task.completed);
+        li.html(`
+          ${task.text}
+          <span class="taskDate">${formatDate(task.date)}</span>
+          <button class="deleteBtn" data-index="${index}">Delete</button>
+        `).attr("data-index", index);
+        $('#taskList').append(li);
+      });
+    }
+
+    $(document).ready(function () {
+      renderTasks();
+
+      // Add Task
+      $('#addTaskBtn').click(function () {
+        const text = $('#taskInput').val().trim();
+        if (text) {
+          tasks.push({ text, date: new Date(), completed: false });
+          $('#taskInput').val('');
+          saveTasks();
+          renderTasks();
+        }
+      });
+
+      // Press Enter to Add Task
+      $('#taskInput').keypress(function (e) {
+        if (e.which === 13) $('#addTaskBtn').click();
+      });
+
+      // Toggle Complete
+      $('#taskList').on('click', '.taskItem', function (e) {
+        if (!$(e.target).hasClass('deleteBtn')) {
+          const index = $(this).data("index");
+          tasks[index].completed = !tasks[index].completed;
+          saveTasks();
+          renderTasks();
+        }
+      });
+
+      // Delete
+      $('#taskList').on('click', '.deleteBtn', function () {
+        const index = $(this).data("index");
+        tasks.splice(index, 1);
+        saveTasks();
+        renderTasks();
+      });
+
+      // Filter Buttons
+      $('#filters button').click(function () {
+        const filter = $(this).data('filter');
+        renderTasks(filter);
+      });
+
+      // Theme Toggle
+      $('#themeToggle').click(function () {
+        $('body').toggleClass('dark');
+      });
+    });
+  </script>
+</body>
+</html>
